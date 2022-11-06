@@ -10,7 +10,18 @@ import { IsJsonString } from '../../lib/services/isJSON';
 import socketAddEvents from '../../lib/services/socketEvents';
 import { currPrice } from '../common/curPrice';
 import { Server } from 'socket.io';
-import { currencies, getConnectionsPool } from 'src/lib/enums/connectionPool';
+import { currencies } from 'src/lib/enums/connectionPool';
+import { w3cwebsocket } from "websocket";
+
+const getConnectionsPool = () => {
+  const connectionsPool = {};
+  currencies.map(item => {
+    connectionsPool[item] =  new w3cwebsocket(
+      `wss://stream.binance.com:9443/ws/${item}@kline_1m`
+    );
+  });
+  return connectionsPool
+ };
 
 @WebSocketGateway(7000)
 export class SocketGateway implements OnGatewayConnection {

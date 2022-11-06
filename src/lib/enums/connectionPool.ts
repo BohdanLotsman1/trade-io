@@ -1,5 +1,3 @@
-import { w3cwebsocket } from "websocket";
-
 export const currencies = [
   'btcusdt',
   'yfibtc',
@@ -20,12 +18,3 @@ export const currencies = [
   'manabusd',
 ];
 
- export const getConnectionsPool = () => {
-  const connectionsPool = {};
-  currencies.map(item => {
-    connectionsPool[item] =  new w3cwebsocket(
-      `wss://stream.binance.com:9443/ws/${item}@kline_1m`
-    );
-  });
-  return connectionsPool
- };
