@@ -6,9 +6,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Socket } from 'dgram';
-import { IsJsonString } from '../../lib/services/isJSON';
 import socketAddEvents from '../../lib/services/socketEvents';
-import { currPrice } from '../common/curPrice';
 import { Server } from 'socket.io';
 import { currencies } from 'src/lib/enums/connectionPool';
 import { w3cwebsocket } from "websocket";
@@ -33,24 +31,6 @@ export class SocketGateway implements OnGatewayConnection {
     for (let i = 0; i < currencies.length; i++) {
       socketAddEvents(getConnectionsPool()[currencies[i]], this.server);
     }
-    client.on('message', (event: Buffer) => {
-      if (IsJsonString(event.toString())) {
-        const tradeObj = JSON.parse(event.toString());
-        const currency = tradeObj.currency.replace('/', '');
-
-        setTimeout(() => {
-          tradeObj.direction == 'UP'
-            ? currPrice[currency] >= tradeObj.close
-              ? client.send('win')
-              : client.send('lose')
-            : currPrice[currency] <= tradeObj.close
-            ? client.send('win')
-            : client.send('lose');
-
-          console.log('Sended');
-        }, tradeObj.time * 60000);
-      }
-    });
   }
   @SubscribeMessage('message')
   handleMessage(@MessageBody() message: any): void {}

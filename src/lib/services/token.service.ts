@@ -47,7 +47,7 @@ export class TokenService {
       .where('access_token', access_token);
   }
 
-  async create(data: any) {
+  async create(data: { user_id: string; access_token: string }) {
     await this.connection.table(this.accessTokensTable).insert({
       ...data,
     });

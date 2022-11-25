@@ -1,10 +1,9 @@
-import { Controller, Get, Req } from '@nestjs/common';
-import { Response, Request } from 'express';
+import { Controller, Get } from '@nestjs/common';
 
 @Controller()
 export class AppController {
   @Get()
-  async root(@Req() req: Request) {
+  async root() {
     return 'Current date: ' + new Date();
   }
 }

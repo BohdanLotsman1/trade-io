@@ -26,7 +26,7 @@ export class AuthService {
   }
 
   async refreshToken(refresh_token: string) {
-    const data = this.jwtService.decode(refresh_token);
+    const data = this.jwtService.decode(refresh_token);    
     const metadata = data['metadata'] ?? {};
     await this.jwtService.verifyAsync(refresh_token);
     const user: UserModel = await this.userService.findById(data['sub']);
@@ -73,19 +73,9 @@ export class AuthService {
         : '1h',
     });
 
-    const jwt_refresh_token = this.jwtService.sign(
-      {
-        sub: id,
-        access_token: HashService.rand(),
-      },
-      {
-        expiresIn: '1d',
-      },
-    );
 
     return {
       access_token: this.metadata(jwt_access_token, Object.keys(payload)),
-      refresh_token: this.metadata(jwt_refresh_token, Object.keys(payload)),
     };
   }
 

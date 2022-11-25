@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
 } from '@nestjs/common';
 import { ILoginUser, IPasswordChange } from '../types';
@@ -26,7 +27,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  async login(@Req() request, @Body() body: ILoginUser) {
+  async login(@Body() body: ILoginUser) {
     const payload = loginSchema.validateSync(body, YupOptions);
     const user = await this.userService.findByEmail(payload.email);
     const wallet = await this.walletService.getWallet(user.id);
@@ -77,7 +78,7 @@ export class AuthController {
       return {
         data: {
           user,
-          wallet
+          wallet,
         },
       };
     } catch (e) {
@@ -113,8 +114,15 @@ export class AuthController {
       return { data };
     } catch (e) {
       data = e;
-
       return { data };
     }
+  }
+
+  @Get('refresh-token')
+  async refreshToken(@Query('token') token: string) {
+    const data = await this.authService.refreshToken(token);
+    console.log(data);
+    
+    return {data}
   }
 }
