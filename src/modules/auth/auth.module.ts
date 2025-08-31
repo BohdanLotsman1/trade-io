@@ -15,19 +15,19 @@ import { authVerifyMiddleware } from 'src/lib/middleware/authVerify.middleware';
 import { userVerifyMiddleware } from 'src/lib/middleware/userVerify.middleware';
 import { UserService } from '../user/services/user.service';
 import { WalletService } from '../wallet/services/wallet.service';
+import { AppJwtModule } from './jwt/jwt.module';
 @Global()
 @Module({
-  providers: [RegisterService, AuthService, UserService, TokenService, WalletService],
-  exports: [RegisterService, AuthService],
-  controllers: [RegisterController, AuthController],
-  imports: [
-    JwtModule.register({
-      secret: 'sd54Sje_#df',
-      signOptions: { expiresIn: '60m' },
-    }),
+  providers: [
+    RegisterService,
+    AuthService,
     UserService,
+    TokenService,
     WalletService,
   ],
+  exports: [RegisterService, AuthService],
+  controllers: [RegisterController, AuthController],
+  imports: [AppJwtModule],
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void | MiddlewareConsumer {

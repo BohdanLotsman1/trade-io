@@ -15,10 +15,17 @@ async function bootstrap() {
   });
   const tradeService = TradeService.getInstance();
   app.useStaticAssets(path.join(__dirname, '../static'));
-  const job = new CronJob('* * * * * *', function(){tradeService.chaeckTrades()}, null, true);
+  const job = new CronJob(
+    '* * * * * *',
+    function () {
+      tradeService.chaeckTrades();
+    },
+    null,
+    true,
+  );
   app.useWebSocketAdapter(new WsAdapter(app));
   job.start();
-  await app.listen(process.env.PORT || 5000);
+  await app.listen(process.env.PORT || 5001);
 }
 
 bootstrap();

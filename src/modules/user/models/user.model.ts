@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Model } from 'nestjs-objection';
 import { UlidModel } from 'src/lib/models/ulidModel';
 import _ from 'underscore';
 
@@ -12,6 +11,8 @@ export class UserModel extends UlidModel {
   email: string;
   name: string;
   password: string;
+  password_hash: string;
+  avatar_url: string;
 
   get $secureFields(): string[] {
     return ['password'];

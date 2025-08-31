@@ -15,8 +15,10 @@ import { WalletService } from 'src/modules/wallet/services/wallet.service';
 
 @Controller('register')
 export class RegisterController {
-  constructor(private registerService: RegisterService, 
-    private walletService: WalletService) {}
+  constructor(
+    private registerService: RegisterService,
+    private walletService: WalletService,
+  ) {}
 
   @Post('/')
   async registerCustomer(@Req() request, @Body() body: IRegisterUser) {
@@ -24,8 +26,11 @@ export class RegisterController {
     try {
       const validate = await registerSchema.validate(body, YupOptions);
 
-      const user = await this.registerService.registerUser(request, validate);
-      await this.walletService.createWallet(user.id)
+      const user = await this.registerService.registerUser(
+        request,
+        validate as IRegisterUser,
+      );
+      await this.walletService.createWallet(user.id);
       return { data: { user } };
     } catch (e) {
       data = e;
