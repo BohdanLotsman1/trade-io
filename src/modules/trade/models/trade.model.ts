@@ -5,7 +5,7 @@ import { WalletModel } from 'src/modules/wallet/models/wallet.model';
 
 export class TradeModel extends UlidModel {
   static get tableName() {
-    return 'trade';
+    return 'trades';
   }
 
   static get relationMappings() {
@@ -14,7 +14,7 @@ export class TradeModel extends UlidModel {
         relation: Model.HasOneRelation,
         modelClass: UserModel,
         join: {
-          from: 'trade.user_id',
+          from: 'trades.user_id',
           to: 'users.id',
         },
       },
@@ -22,8 +22,8 @@ export class TradeModel extends UlidModel {
         relation: Model.HasOneRelation,
         modelClass: WalletModel,
         join: {
-          from: 'trade.wallet_id',
-          to: 'wallet.id',
+          from: 'trades.wallet_id',
+          to: 'wallets.id',
         },
       },
     };

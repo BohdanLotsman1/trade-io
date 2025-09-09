@@ -5,29 +5,31 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { RegisterController } from './controllers/register.controller';
 import { AuthController } from './controllers/auth.controller';
 import { RegisterService } from './services/register.service';
 import { AuthService } from './services/auth.service';
-import { TokenService } from '../../lib/services/token.service';
 import { authVerifyMiddleware } from 'src/lib/middleware/authVerify.middleware';
-import { userVerifyMiddleware } from 'src/lib/middleware/userVerify.middleware';
+// import { userVerifyMiddleware } from 'src/lib/middleware/userVerify.middleware';
 import { UserService } from '../user/services/user.service';
 import { WalletService } from '../wallet/services/wallet.service';
 import { AppJwtModule } from './jwt/jwt.module';
+import { PassportModule } from '@nestjs/passport';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { JwtAccessStrategy } from './jwt/jwt.strategy';
 @Global()
 @Module({
   providers: [
     RegisterService,
     AuthService,
     UserService,
-    TokenService,
     WalletService,
+    GoogleStrategy,
+    JwtAccessStrategy,
   ],
   exports: [RegisterService, AuthService],
   controllers: [RegisterController, AuthController],
-  imports: [AppJwtModule],
+  imports: [AppJwtModule, PassportModule.register({ session: false })],
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void | MiddlewareConsumer {
@@ -36,16 +38,10 @@ export class AuthModule implements NestModule {
       .exclude(
         { path: '/auth/login', method: RequestMethod.POST },
         { path: '/register', method: RequestMethod.POST },
-        { path: '/history', method: RequestMethod.POST },
-      )
-      .forRoutes('*');
-
-    consumer
-      .apply(userVerifyMiddleware)
-      .exclude(
-        { path: '/auth/login', method: RequestMethod.POST },
-        { path: '/register', method: RequestMethod.POST },
-        { path: '/history', method: RequestMethod.POST },
+        { path: '/refresh-token', method: RequestMethod.POST },
+        { path: '/history', method: RequestMethod.GET },
+        { path: '/auth/google', method: RequestMethod.POST },
+        { path: '/auth/google/callback', method: RequestMethod.POST },
       )
       .forRoutes('*');
   }

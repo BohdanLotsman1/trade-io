@@ -8,12 +8,19 @@ import * as path from 'path';
 import { CronJob } from 'cron';
 import { WsAdapter } from './modules/sockets/socket.adapter';
 import { TradeService } from './modules/trade/services/trade.service';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    cors: true,
+    cors: {
+      origin: 'http://localhost:3000',
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    },
   });
   const tradeService = TradeService.getInstance();
+  app.use(cookieParser(process.env.COOKIE_SECRET));
   app.useStaticAssets(path.join(__dirname, '../static'));
   const job = new CronJob(
     '* * * * * *',

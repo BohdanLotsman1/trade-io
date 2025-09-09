@@ -6,10 +6,16 @@ export class HistoryController {
   constructor(private historyService: HistoryService) {}
 
   @Get('/')
-  async getHistory(@Query('currency') currency: string) {
+  async getHistory(
+    @Query('currency') currency: string,
+    @Query('interval') interval: string,
+  ) {
     try {
       const currencyString = currency.replace('/', '');
-      const history = await this.historyService.getHistory(currencyString);
+      const history = await this.historyService.getHistory(
+        currencyString,
+        interval,
+      );
       return {
         data: {
           history,

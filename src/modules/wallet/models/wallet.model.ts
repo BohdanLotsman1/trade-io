@@ -4,7 +4,7 @@ import { UserModel } from 'src/modules/user/models/user.model';
 
 export class WalletModel extends UlidModel {
   static get tableName() {
-    return 'wallet';
+    return 'wallets';
   }
 
   static get relationMappings() {
@@ -13,8 +13,8 @@ export class WalletModel extends UlidModel {
         relation: Model.HasOneRelation,
         modelClass: UserModel,
         join: {
-          from: 'wallet.user_id',
-          to: 'user.id',
+          from: 'wallets.user_id',
+          to: 'users.id',
         },
       },
     };

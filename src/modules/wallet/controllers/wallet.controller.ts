@@ -1,18 +1,8 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Put,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Param, Put } from '@nestjs/common';
 import { WalletService } from '../services/wallet.service';
 
 @Controller('wallet')
-export class CustomerController {
+export class WalletController {
   constructor(private walletService: WalletService) {}
 
   @Get('/:id')

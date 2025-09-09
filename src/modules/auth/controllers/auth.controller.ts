@@ -2,12 +2,15 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
-  Query,
   Req,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ILoginUser, IPasswordChange } from '../types';
 import { loginSchema } from '../../../lib/validator/auth/login.validator';
@@ -17,6 +20,7 @@ import { HashService } from '../../../lib/services/hash.service';
 import { changePasswordSchema } from 'src/lib/validator/auth/change-password.validator';
 import { UserService } from 'src/modules/user/services/user.service';
 import { WalletService } from 'src/modules/wallet/services/wallet.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -27,42 +31,78 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  async login(@Body() body: ILoginUser) {
-    const payload = loginSchema.validateSync(body, YupOptions);
-    const user = await this.userService.findByEmail(payload.email);
-    const wallet = await this.walletService.getWallet(user.id);
-    if (!user) {
+  async login(@Body() body: ILoginUser, @Res({ passthrough: true }) res) {
+    try {
+      const payload = loginSchema.validateSync(body, YupOptions);
+      const user = await this.userService.findByEmail(payload.email);
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const check = await HashService.check(body.password, user.password);
+
+      if (!check) {
+        throw new ForbiddenException('Password invalid');
+      }
+
+      const wallet = await this.walletService.getWallet(user.id);
+      const { access_token, refresh_token } = this.authService.signTokens(user);
+
+      this.authService.setCookies(res, access_token, refresh_token);
+
       return {
         data: {
-          message: new BadRequestException('User not found'),
+          user: {
+            ...user,
+            wallet,
+          },
         },
       };
+    } catch (e) {
+      throw new BadRequestException(e);
     }
+  }
 
-    const check = await HashService.check(body.password, user.password);
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    /* passport auto-redirects */
+  }
 
-    if (!check) {
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleCallback(@Req() req, @Res({ passthrough: true }) res) {
+    try {
+      const user = await this.authService.upsertOAuthUser(req.user);
+      const { access_token, refresh_token } = this.authService.signTokens(user);
+
+      this.authService.setCookies(res, access_token, refresh_token);
+
+      const wallet = await this.walletService.getWallet(user.id);
+
       return {
         data: {
-          message: new BadRequestException('Password invalid'),
+          user: {
+            ...user,
+            wallet,
+          },
         },
       };
+    } catch (e) {
+      throw new BadRequestException(e);
     }
-    const token = await this.authService.login(user.id);
-
-    return {
-      data: {
-        token,
-        user,
-        wallet,
-      },
-    };
   }
 
   @Get('logout')
-  async logout(@Req() request) {
+  async logout(@Res({ passthrough: true }) res, @Req() req) {
     try {
-      await this.authService.logout(request['access_token']);
+      const user = await this.authService.getAuthUser(
+        req.cookies?.access_token,
+      );
+      this.userService.updateUser(user.id, { refresh_token: null });
+      res.clearCookie('access_token');
+      res.clearCookie('refresh_token');
       return { message: 'Logout Success' };
     } catch (e) {
       console.log(e);
@@ -70,20 +110,23 @@ export class AuthController {
     }
   }
 
-  @Get('/')
+  @Get('/me')
   async getAuthUser(@Req() request) {
     try {
-      const user = await this.authService.getAuthUser(request['access_token']);
+      const access = request.cookies?.access_token;
+      const user = await this.authService.getAuthUser(access);
       const wallet = await this.walletService.getWallet(user.id);
       return {
         data: {
-          user,
-          wallet,
+          user: {
+            ...user,
+            wallet,
+          },
         },
       };
     } catch (e) {
       console.log(e);
-      return { message: 'Get Auth User error' };
+      return { message: new BadRequestException('Get Auth User error') };
     }
   }
 
@@ -118,11 +161,8 @@ export class AuthController {
     }
   }
 
-  @Get('refresh-token')
-  async refreshToken(@Query('token') token: string) {
-    const data = await this.authService.refreshToken(token);
-    console.log(data);
-    
-    return {data}
+  @Post('refresh-token')
+  async refresh(@Req() req, @Res({ passthrough: true }) res) {
+    return this.authService.refreshToken(req, res);
   }
 }

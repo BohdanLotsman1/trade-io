@@ -5,10 +5,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Connection, InjectConnection } from 'nestjs-objection';
-import { AuthService } from '../../modules/auth/services/auth.service';
+// import { Connection, InjectConnection } from 'nestjs-objection';
 import { UserModel } from '../../modules/user/models/user.model';
 import { IToken } from '../models/token.model';
+import { RequestHandler } from '@nestjs/common/interfaces';
 
 export interface IAuthenticatedUser {
   id: string;
@@ -18,19 +18,20 @@ export interface IAuthenticatedUser {
 export interface AuthenticatedRequest extends Request {
   user: IAuthenticatedUser;
   access_token: string;
+  refresh_token: string;
 }
 
 // Authentication facility
 @Injectable()
 export class authVerifyMiddleware implements NestMiddleware {
-  constructor(
-    @InjectConnection() private readonly connection: Connection,
-    private jwtService: JwtService,
-    private authService: AuthService,
-  ) {}
+  constructor(private jwtService: JwtService) {}
 
-  async use(request: AuthenticatedRequest, response: Response, next: Function) {
-    const token = request.header('Authorization')?.replace('Bearer ', '');
+  async use(request: AuthenticatedRequest, _: Response, next: Function) {
+    const token = request.cookies['access_token'];
+
+    if ((request as any)?._parsedUrl?.pathname === '/auth/refresh-token') {
+      return next();
+    }
     const data = this.jwtService.decode(token) as IToken;
 
     try {
@@ -43,11 +44,7 @@ export class authVerifyMiddleware implements NestMiddleware {
       throw new UnauthorizedException('Invalid token');
     }
 
-    if (
-      !data.access_token ||
-      !data.sub ||
-      !(await this.authService.isTokenExists(data.access_token, data.sub))
-    ) {
+    if (!token) {
       throw new UnauthorizedException('Token does not exist');
     }
 
@@ -62,8 +59,6 @@ export class authVerifyMiddleware implements NestMiddleware {
     if (!user) {
       throw new UnauthorizedException('User does not exist');
     }
-
-    request.access_token = data.access_token;
 
     return next();
   }

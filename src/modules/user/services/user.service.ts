@@ -1,19 +1,22 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserModel } from '../models/user.model';
-import knex from 'knex';
+import { transaction } from 'objection';
+import { OauthAccountModel } from 'src/modules/auth/oauth-account.model';
 
 @Injectable()
 export class UserService {
   async findById(id): Promise<UserModel> {
     return UserModel.query().findById(id);
   }
+
   async findByProvider(provider: string, providerAccountId: string) {
-    return UserModel.query()
-      .join('oauth_accounts', 'users.id', 'oauth_accounts.user_id')
-      .where({ provider, provider_account_id: providerAccountId })
-      .select('users.*')
+    const row = await OauthAccountModel.query()
+      .where({ provider, providerAccountId })
+      .withGraphFetched('user')
       .first();
+    return row?.user ?? null;
   }
+
   async findByEmail(email): Promise<UserModel> {
     return UserModel.query().where('email', email).limit(1).first();
   }
@@ -25,28 +28,47 @@ export class UserService {
 
     return { data };
   }
-  async linkOauthAccount(
-    userId: number,
-    data: {
-      provider: string;
-      provider_account_id: string;
-      access_token?: string;
-      refresh_token?: string;
-      access_token_expires_at?: Date | null;
-    },
-  ) {
-    const row = { user_id: userId, ...data };
-    const exists = await knex('oauth_accounts')
-      .where({
-        provider: data.provider,
-        provider_account_id: data.provider_account_id,
-      })
-      .first();
-    if (!exists) await knex('oauth_accounts').insert(row);
-  }
-  async createUser({ email, name, avatar_url }: any) {
-    const user = await UserModel.query().insert({ email, name, avatar_url });
-    return user;
+
+  async createUserAndLinkOauth(data: {
+    email: string | null;
+    name?: string | null;
+    avatarUrl?: string | null;
+    provider: string;
+    providerAccountId: string;
+    accessToken?: string | null;
+    refreshToken?: string | null;
+  }) {
+    return transaction(OauthAccountModel.knex(), async (trx) => {
+      let user: UserModel | undefined;
+      try {
+        if (data.email) {
+          user = await UserModel.query(trx).findOne({ email: data.email });
+        }
+        if (!user) {
+          user = await UserModel.query(trx).insert({
+            email: data.email,
+            name: data.name ?? null,
+            avatar_url: data.avatarUrl ?? null,
+          });
+        }
+        const exists = await OauthAccountModel.query(trx).findOne({
+          provider: data.provider,
+          providerAccountId: data.providerAccountId,
+        });
+        if (!exists) {
+          await OauthAccountModel.query(trx).insert({
+            userId: user.id,
+            provider: data.provider,
+            providerAccountId: data.providerAccountId,
+            accessToken: data.accessToken ?? null,
+            refreshToken: data.refreshToken ?? null,
+          });
+        }
+        return user;
+      } catch (error) {
+        throw error;
+      }
+    });
   }
   async deleteUser(userID: string): Promise<number> {
     return UserModel.query().delete().where('id', userID);

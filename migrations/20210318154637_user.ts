@@ -6,7 +6,8 @@ export async function up(knex: Knex): Promise<void> {
     table.string('email', 100).notNullable().unique();
     table.string('name', 50).notNullable();
     table.string('password', 255).notNullable();
-    table.string('password_hash').nullable().alter(); // allow passwordless SSO users
+    table.string('password_hash', 255).nullable();
+    table.string('refresh_token', 2048).nullable(); // allow passwordless SSO users
     table.string('avatar_url').nullable();
     table.timestamps();
     table.dateTime('deleted_at').nullable();

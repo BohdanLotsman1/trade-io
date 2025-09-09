@@ -13,6 +13,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('time').notNullable();
     table.string('end_time').notNullable();
     table.string('currency').notNullable();
+    table.string('wallet_id').notNullable();
     table.timestamps();
     table.dateTime('deleted_at').nullable();
   });
