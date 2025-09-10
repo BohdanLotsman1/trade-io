@@ -19,9 +19,8 @@ export class HistoryController {
     @Query('endTime') endTime?: number,
   ) {
     try {
-      const currencyString = currency.replace('/', '');
       const history = await this.historyService.getHistory({
-        currencyString,
+        currency,
         interval,
         endTime,
       });
@@ -36,6 +35,24 @@ export class HistoryController {
       };
     } catch (e) {
       throw new BadRequestException('Get history error');
+    }
+  }
+
+  @Get('/listed-currencies')
+  async getListedCurrencies() {
+    try {
+      const currencies = await this.historyService.getListedCurrencies();
+
+      if (!currencies.length) {
+        throw new BadRequestException(currencies);
+      }
+      return {
+        data: {
+          currencies,
+        },
+      };
+    } catch (e) {
+      throw new BadRequestException(e);
     }
   }
 }
