@@ -6,7 +6,6 @@ import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as path from 'path';
 import { CronJob } from 'cron';
-import { WsAdapter } from './modules/sockets/socket.adapter';
 import { TradeService } from './modules/trade/services/trade.service';
 import * as cookieParser from 'cookie-parser';
 
@@ -30,7 +29,6 @@ async function bootstrap() {
     null,
     true,
   );
-  app.useWebSocketAdapter(new WsAdapter(app));
   job.start();
   await app.listen(process.env.PORT || 5001);
 }

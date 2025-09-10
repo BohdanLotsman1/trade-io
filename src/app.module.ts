@@ -10,7 +10,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { TradeModule } from './modules/trade/trade.module';
 import { UserModule } from './modules/user/user.module';
-import { SocketGateway } from './modules/sockets/socket.gateway';
 import { HistoryModule } from './modules/history/history.module';
 
 @Module({
@@ -33,6 +32,5 @@ import { HistoryModule } from './modules/history/history.module';
     HistoryModule,
   ],
   controllers: [AppController],
-  providers: [SocketGateway],
 })
 export class AppModule {}
